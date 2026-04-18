@@ -37,7 +37,7 @@ public class Main {
             }
         long fim = System.nanoTime();
 
-        System.out.println("Tempo gasto para calcular a soma: " + (fim - inicio)/1000000000.0 + " segundos");
+        System.out.println("\nTempo gasto para calcular a soma: " + (fim - inicio)/1000000000.0 + " segundos");
         System.out.println("Soma: " + soma);
 
         scan.close();
