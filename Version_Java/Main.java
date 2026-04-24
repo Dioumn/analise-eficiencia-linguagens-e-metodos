@@ -9,9 +9,9 @@ public class Main {
         Random rand = new Random();
 
         System.out.println("Informe a dimenção da matriz: ");
-        int dimencao = scan.nextInt();
+        int dimensao = scan.nextInt();
 
-        int[][] matriz = new int[dimencao][dimencao];
+        int[][] matriz = new int[dimensao][dimensao];
 
         System.out.println("Deseja preencher a matriz com valores aleatórios ou fixos? (A/F)");
         char opcao = scan.next().charAt(0);
@@ -21,8 +21,8 @@ public class Main {
             System.out.println("Informe os valor que todas as célula devem ter: ");
             int valor = scan.nextInt();
 
-            for (int i = 0; i < dimencao; i++) {
-                for (int j = 0; j < dimencao; j++) {
+            for (int i = 0; i < dimensao; i++) {
+                for (int j = 0; j < dimensao; j++) {
                     matriz[i][j] = valor;
                 }
             }
@@ -33,27 +33,26 @@ public class Main {
             int max = scan.nextInt();
 
             // Gera a matriz com valores aleatórios e exibe o progresso
-            for (int i = 0; i < dimencao; i++) {
-                for (int j = 0; j < dimencao; j++) {
+            for (int i = 0; i < dimensao; i++) {
+                for (int j = 0; j < dimensao; j++) {
                     matriz[i][j] = rand.nextInt(max - min + 1) + min;
-                    int progress = (i * dimencao + j + 1) * 100 / (dimencao * dimencao);
+                    int progress = (i * dimensao + j + 1) * 100 / (dimensao * dimensao);
                     System.out.print("\rGerando matriz: " + progress + "%");
                 }
             }
         }
 
-
         // Calcula a soma dos elementos da matriz e mede o tempo gasto para isso (jeito inteligente)
         long inicio = System.nanoTime();
-            int soma = 0;
-            for (int i = 0; i < dimencao; i++) {
-                for (int j = 0; j < dimencao; j++) {
+            long soma = 0;
+            for (int i = 0; i < dimensao; i++) {
+                for (int j = 0; j < dimensao; j++) {
                     soma += matriz[i][j];
                 }
             }
         long fim = System.nanoTime();
 
-        System.out.println("--------------------Método-por-Linhas--------------------");
+        System.out.println("\n--------------------Método-por-Linhas--------------------");
         System.out.println("\nTempo gasto para calcular a soma: " + (fim - inicio)/1000000000.0 + " segundos");
         System.out.println("Soma: " + soma);
 
@@ -61,18 +60,18 @@ public class Main {
         // Calcula a soma dos elementos da matriz e mede o tempo gasto para isso (jeito burro)
         inicio = System.nanoTime();
             soma = 0;
-            for (int i = 0; i < dimencao; i++) {
-                for (int j = 0; j < dimencao; j++) {
+            for (int i = 0; i < dimensao; i++) {
+                for (int j = 0; j < dimensao; j++) {
                     soma += matriz[j][i];
                 }
             }
         fim = System.nanoTime();
 
-        System.out.println("--------------------Método-por-Colunas--------------------");
+        System.out.println("\n--------------------Método-por-Colunas--------------------");
         System.out.println("\nTempo gasto para calcular a soma: " + (fim - inicio)/1000000000.0 + " segundos");
         System.out.println("Soma: " + soma);
         System.out.println("__________________________________________________________");
 
         scan.close();
     }
-}
+} 

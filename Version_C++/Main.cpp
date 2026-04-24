@@ -9,11 +9,11 @@ using namespace std;
 int main() {
     srand(time(0)); // inicializa o gerador de aleatórios
 
-    int dimencao;
+    int dimensao;
     cout << "Informe a dimensao da matriz: " << flush;
-    cin >> dimencao;
+    cin >> dimensao;
 
-    vector<vector<int>> matriz(dimencao, vector<int>(dimencao));
+    vector<vector<int>> matriz(dimensao, vector<int>(dimensao));
 
     cout << "Deseja preencher a matriz com valores aleatorios ou fixos? (A/F): " << flush;
     char opcao;
@@ -24,8 +24,8 @@ int main() {
         int valor;
         cin >> valor;
 
-        for (int i = 0; i < dimencao; i++) {
-            for (int j = 0; j < dimencao; j++) {
+        for (int i = 0; i < dimensao; i++) {
+            for (int j = 0; j < dimensao; j++) {
                 matriz[i][j] = valor;
             }
         }
@@ -36,11 +36,11 @@ int main() {
         cout << "Informe o valor maximo de uma celula: ";
         cin >> max;
 
-        for (int i = 0; i < dimencao; i++) {
-            for (int j = 0; j < dimencao; j++) {
+        for (int i = 0; i < dimensao; i++) {
+            for (int j = 0; j < dimensao; j++) {
                 matriz[i][j] = rand() % (max - min + 1) + min;
 
-                int progress = (i * dimencao + j + 1) * 100 / (dimencao * dimencao);
+                int progress = (i * dimensao + j + 1) * 100 / (dimensao * dimensao);
                 cout << "Gerando matriz: " << progress << "%\n";
             }
         }
@@ -49,9 +49,9 @@ int main() {
     // Método por linhas
     auto inicio = chrono::high_resolution_clock::now();
 
-    int soma = 0;
-    for (int i = 0; i < dimencao; i++) {
-        for (int j = 0; j < dimencao; j++) {
+    long long soma = 0;
+    for (int i = 0; i < dimensao; i++) {
+        for (int j = 0; j < dimensao; j++) {
             soma += matriz[i][j];
         }
     }
@@ -67,8 +67,8 @@ int main() {
     inicio = chrono::high_resolution_clock::now();
 
     soma = 0;
-    for (int i = 0; i < dimencao; i++) {
-        for (int j = 0; j < dimencao; j++) {
+    for (int i = 0; i < dimensao; i++) {
+        for (int j = 0; j < dimensao; j++) {
             soma += matriz[j][i];
         }
     }

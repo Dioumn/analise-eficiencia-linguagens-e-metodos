@@ -7,9 +7,9 @@ const rl = readline.createInterface({
 
 const question = (str) => new Promise(resolve => rl.question(str, resolve));
 
-const dimencao = parseInt(await question("Informe a dimensão da matriz: "), 10);
+const dimensao = parseInt(await question("Informe a dimensão da matriz: "), 10);
 
-const matriz = Array.from({ length: dimencao }, () => Array(dimencao));
+const matriz = Array.from({ length: dimensao }, () => Array(dimensao));
 
 const opcao = (await question("Deseja preencher a matriz com valores aleatórios ou fixos? (A/F): "))
     .trim().charAt(0);
@@ -18,8 +18,8 @@ const opcao = (await question("Deseja preencher a matriz com valores aleatórios
 if (opcao === 'F' || opcao === 'f') {
     const valor = parseInt(await question("Informe o valor que todas as células devem ter: "), 10);
 
-    for (let i = 0; i < dimencao; i++) {
-        for (let j = 0; j < dimencao; j++) {
+    for (let i = 0; i < dimensao; i++) {
+        for (let j = 0; j < dimensao; j++) {
             matriz[i][j] = valor;
         }
     }
@@ -27,11 +27,11 @@ if (opcao === 'F' || opcao === 'f') {
     const min = parseInt(await question("Informe o valor mínimo de uma célula: "), 10);
     const max = parseInt(await question("Informe o valor máximo de uma célula: "), 10);
 
-    for (let i = 0; i < dimencao; i++) {
-        for (let j = 0; j < dimencao; j++) {
+    for (let i = 0; i < dimensao; i++) {
+        for (let j = 0; j < dimensao; j++) {
             matriz[i][j] = Math.floor(Math.random() * (max - min + 1)) + min;
 
-            const progress = Math.floor((i * dimencao + j + 1) * 100 / (dimencao * dimencao));
+            const progress = Math.floor((i * dimensao + j + 1) * 100 / (dimensao * dimensao));
             process.stdout.write(`\rGerando matriz: ${progress}%`);
         }
     }
@@ -42,8 +42,8 @@ if (opcao === 'F' || opcao === 'f') {
 let inicio = process.hrtime.bigint();
 
 let soma = 0;
-for (let i = 0; i < dimencao; i++) {
-    for (let j = 0; j < dimencao; j++) {
+for (let i = 0; i < dimensao; i++) {
+    for (let j = 0; j < dimensao; j++) {
         soma += matriz[i][j];
     }
 }
@@ -58,8 +58,8 @@ console.log("Soma:", soma);
 inicio = process.hrtime.bigint();
 
 soma = 0;
-for (let i = 0; i < dimencao; i++) {
-    for (let j = 0; j < dimencao; j++) {
+for (let i = 0; i < dimensao; i++) {
+    for (let j = 0; j < dimensao; j++) {
         soma += matriz[j][i];
     }
 }
