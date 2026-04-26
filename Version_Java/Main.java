@@ -1,77 +1,85 @@
 package Version_Java;
 
-import java.util.Random;
-import java.util.Scanner;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Locale;
 
 public class Main {
-    public static void main(String[] args) {
-        Scanner scan = new Scanner(System.in);
-        Random rand = new Random();
 
-        System.out.println("Informe a dimenção da matriz: ");
-        int dimensao = scan.nextInt();
+    // Configurações dos testes
+    static int[] dimensoes = {4000, 8000, 12000};
+    static int repeticoes = 5;
 
-        int[][] matriz = new int[dimensao][dimensao];
+    public static void main(String[] args) throws IOException {
 
-        System.out.println("Deseja preencher a matriz com valores aleatórios ou fixos? (A/F)");
-        char opcao = scan.next().charAt(0);
+        try (FileWriter writer = new FileWriter("resultados/resultados_java.csv")) {
 
-        // Preenche a matriz com valores fixos ou aleatórios, dependendo da escolha do usuário
-        if (opcao == 'F' || opcao == 'f') {
-            System.out.println("Informe os valor que todas as célula devem ter: ");
-            int valor = scan.nextInt();
+            writer.write("dimensao,metodo,tipo,intervalo,execucao,tempo_segundos,soma\n");
 
-            for (int i = 0; i < dimensao; i++) {
-                for (int j = 0; j < dimensao; j++) {
-                    matriz[i][j] = valor;
-                }
-            }
-        } else {
-            System.out.println("Informe o valor mínimo de uma célula: ");
-            int min = scan.nextInt();
-            System.out.println("Informe o value máximo de uma célula: ");
-            int max = scan.nextInt();
+            for (int dim : dimensoes) {
+                for (int tipo = 0; tipo < 3; tipo++) {
 
-            // Gera a matriz com valores aleatórios e exibe o progresso
-            for (int i = 0; i < dimensao; i++) {
-                for (int j = 0; j < dimensao; j++) {
-                    matriz[i][j] = rand.nextInt(max - min + 1) + min;
-                    int progress = (i * dimensao + j + 1) * 100 / (dimensao * dimensao);
-                    System.out.print("\rGerando matriz: " + progress + "%");
+                    int[][] matriz = GeradorMatriz.gerar(dim, tipo);
+
+                    String tipoStr = getTipoStr(tipo);
+                    String intervaloStr = getIntervaloStr(tipo);
+
+                    // Warm-up pra evitar que o Java brinque com a minha cara (foi horrivel descobrir isso)
+                    for (int i = 0; i < 2; i++) {
+                        Medidor.medirLinhas(matriz);
+                        Medidor.medirColunas(matriz);
+                    }
+
+                    // Alterna a ordem pra evitar que o primeiro método testado tenha vantagem por estar na cache
+                    for (int r = 0; r < repeticoes; r++) {
+
+                        boolean linhasPrimeiro = (r % 2 == 0);
+
+                        if (linhasPrimeiro) {
+                            salvar(writer, dim, tipoStr, intervaloStr, r, Medidor.medirLinhas(matriz));
+                            salvar(writer, dim, tipoStr, intervaloStr, r, Medidor.medirColunas(matriz));
+                        } else {
+                            salvar(writer, dim, tipoStr, intervaloStr, r, Medidor.medirColunas(matriz));
+                            salvar(writer, dim, tipoStr, intervaloStr, r, Medidor.medirLinhas(matriz));
+                        }
+                    }
                 }
             }
         }
 
-        // Calcula a soma dos elementos da matriz e mede o tempo gasto para isso (jeito inteligente)
-        long inicio = System.nanoTime();
-            long soma = 0;
-            for (int i = 0; i < dimensao; i++) {
-                for (int j = 0; j < dimensao; j++) {
-                    soma += matriz[i][j];
-                }
-            }
-        long fim = System.nanoTime();
-
-        System.out.println("\n--------------------Método-por-Linhas--------------------");
-        System.out.println("\nTempo gasto para calcular a soma: " + (fim - inicio)/1000000000.0 + " segundos");
-        System.out.println("Soma: " + soma);
-
-
-        // Calcula a soma dos elementos da matriz e mede o tempo gasto para isso (jeito burro)
-        inicio = System.nanoTime();
-            soma = 0;
-            for (int i = 0; i < dimensao; i++) {
-                for (int j = 0; j < dimensao; j++) {
-                    soma += matriz[j][i];
-                }
-            }
-        fim = System.nanoTime();
-
-        System.out.println("\n--------------------Método-por-Colunas--------------------");
-        System.out.println("\nTempo gasto para calcular a soma: " + (fim - inicio)/1000000000.0 + " segundos");
-        System.out.println("Soma: " + soma);
-        System.out.println("__________________________________________________________");
-
-        scan.close();
+        System.out.println("Testes finalizados.");
     }
-} 
+
+    static void salvar(FileWriter writer, int dim, String tipo, String intervalo, int execucao, Resultado r) throws IOException {
+
+        double tempo = r.tempo / 1_000_000_000.0;
+
+        writer.write(String.format(
+            Locale.US,
+            "%d,%s,%s,%s,%d,%.6f,%d\n",
+            dim,
+            r.metodo,
+            tipo,
+            intervalo,
+            execucao,
+            tempo,
+            r.soma
+        ));
+    }
+
+    static String getTipoStr(int tipo) {
+        switch (tipo) {
+            case 0: return "Fixo";
+            case 1: return "Fixo";
+            default: return "Aleatorio";
+        }
+    }
+
+    static String getIntervaloStr(int tipo) {
+        switch (tipo) {
+            case 0: return "1";
+            case 1: return "100000";
+            default: return "1-100000";
+        }
+    }
+}

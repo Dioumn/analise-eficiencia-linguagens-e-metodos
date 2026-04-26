@@ -1,74 +1,46 @@
-import readline from 'readline';
+const fs = require("fs");
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+const { gerar } = require('./GeradorMatriz');
+const { medirLinhas, medirColunas } = require('./Medidor');
 
-const question = (str) => new Promise(resolve => rl.question(str, resolve));
+const dimensoes = [4000, 8000, 12000];
+const repeticoes = 5;
 
-const dimensao = parseInt(await question("Informe a dimensão da matriz: "), 10);
+let csv = "dimensao,metodo,tipo,intervalo,execucao,tempo_segundos,soma\n";
 
-const matriz = Array.from({ length: dimensao }, () => Array(dimensao));
+for (const dim of dimensoes) {
+    for (let tipo = 0; tipo < 3; tipo++) {
 
-const opcao = (await question("Deseja preencher a matriz com valores aleatórios ou fixos? (A/F): "))
-    .trim().charAt(0);
+        const matriz = gerar(dim, tipo);
 
-// Preenchimento
-if (opcao === 'F' || opcao === 'f') {
-    const valor = parseInt(await question("Informe o valor que todas as células devem ter: "), 10);
+        const tipoStr = tipo === 2 ? "Aleatorio" : "Fixo";
+        const intervaloStr = tipo === 0 ? "1" :
+                             tipo === 1 ? "100000" : "1-100000";
 
-    for (let i = 0; i < dimensao; i++) {
-        for (let j = 0; j < dimensao; j++) {
-            matriz[i][j] = valor;
+        // warm-up pra evitar que o Node.js otimize o código durante os testes (tipo o Java)
+        for (let i = 0; i < 2; i++) {
+            medirLinhas(matriz);
+            medirColunas(matriz);
+        }
+
+        for (let r = 0; r < repeticoes; r++) {
+            const linhasPrimeiro = (r % 2 === 0);
+
+            const salvar = (res) => {
+                const tempo = res.tempo / 1e9;
+                csv += `${dim},${res.metodo},${tipoStr},${intervaloStr},${r},${tempo},${res.soma}\n`;
+            };
+
+            if (linhasPrimeiro) {
+                salvar(medirLinhas(matriz));
+                salvar(medirColunas(matriz));
+            } else {
+                salvar(medirColunas(matriz));
+                salvar(medirLinhas(matriz));
+            }
         }
     }
-} else {
-    const min = parseInt(await question("Informe o valor mínimo de uma célula: "), 10);
-    const max = parseInt(await question("Informe o valor máximo de uma célula: "), 10);
-
-    for (let i = 0; i < dimensao; i++) {
-        for (let j = 0; j < dimensao; j++) {
-            matriz[i][j] = Math.floor(Math.random() * (max - min + 1)) + min;
-
-            const progress = Math.floor((i * dimensao + j + 1) * 100 / (dimensao * dimensao));
-            process.stdout.write(`\rGerando matriz: ${progress}%`);
-        }
-    }
-    console.log();
 }
 
-// -------- MÉTODO POR LINHAS --------
-let inicio = process.hrtime.bigint();
-
-let soma = 0;
-for (let i = 0; i < dimensao; i++) {
-    for (let j = 0; j < dimensao; j++) {
-        soma += matriz[i][j];
-    }
-}
-
-let fim = process.hrtime.bigint();
-
-console.log("--------------------Método-por-Linhas--------------------");
-console.log(`\nTempo: ${Number(fim - inicio) / 1e9} segundos`);
-console.log("Soma:", soma);
-
-// -------- MÉTODO POR COLUNAS --------
-inicio = process.hrtime.bigint();
-
-soma = 0;
-for (let i = 0; i < dimensao; i++) {
-    for (let j = 0; j < dimensao; j++) {
-        soma += matriz[j][i];
-    }
-}
-
-fim = process.hrtime.bigint();
-
-console.log("--------------------Método-por-Colunas--------------------");
-console.log(`\nTempo: ${Number(fim - inicio) / 1e9} segundos`);
-console.log("Soma:", soma);
-console.log("__________________________________________________________");
-
-rl.close();
+fs.writeFileSync("../resultados/resultados_js.csv", csv);
+console.log("Testes finalizados.");

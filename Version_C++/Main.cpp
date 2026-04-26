@@ -1,84 +1,108 @@
 #include <iostream>
 #include <vector>
-#include <cstdlib>  // rand, srand
-#include <ctime>    // time
-#include <chrono>   // medir tempo
+#include <fstream>
+#include <chrono>
+#include <random>
 
 using namespace std;
+using namespace chrono;
+
+struct Resultado {
+    string metodo;
+    long long soma;
+    long long tempo;
+};
+
+// Gera uma matriz quadrada de dimensão 'dim' e tipo 'tipo' (0: todos 1, 1: todos 100000, 2: aleatório entre 1 e 100000)
+vector<vector<int>> gerar(int dim, int tipo) {
+    vector<vector<int>> m(dim, vector<int>(dim));
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dist(1, 100000);
+
+    for (int i = 0; i < dim; i++) {
+        for (int j = 0; j < dim; j++) {
+            switch (tipo) {
+                case 0: m[i][j] = 1; break;
+                case 1: m[i][j] = 100000; break;
+                case 2: m[i][j] = dist(gen); break;
+            }
+        }
+    }
+    return m;
+}
+
+Resultado medirLinhas(const vector<vector<int>>& m) {
+    auto inicio = high_resolution_clock::now();
+    long long soma = 0;
+
+    // jeito inteligente
+    for (int i = 0; i < m.size(); i++)
+        for (int j = 0; j < m.size(); j++)
+            soma += m[i][j];
+
+    auto fim = high_resolution_clock::now();
+
+    return {"Linhas", soma, duration_cast<nanoseconds>(fim - inicio).count()};
+}
+
+Resultado medirColunas(const vector<vector<int>>& m) {
+    auto inicio = high_resolution_clock::now();
+    long long soma = 0;
+
+    // jeito burro
+    for (int i = 0; i < m.size(); i++)
+        for (int j = 0; j < m.size(); j++)
+            soma += m[j][i];
+
+    auto fim = high_resolution_clock::now();
+
+    return {"Colunas", soma, duration_cast<nanoseconds>(fim - inicio).count()};
+}
 
 int main() {
-    srand(time(0)); // inicializa o gerador de aleatórios
+    vector<int> dimensoes = {4000, 8000, 12000};
+    int repeticoes = 5;
 
-    int dimensao;
-    cout << "Informe a dimensao da matriz: " << flush;
-    cin >> dimensao;
+    ofstream file("../resultados/resultados_cpp.csv");
+    file << "dimensao,metodo,tipo,intervalo,execucao,tempo_segundos,soma\n";
 
-    vector<vector<int>> matriz(dimensao, vector<int>(dimensao));
+    for (int dim : dimensoes) {
+        for (int tipo = 0; tipo < 3; tipo++) {
 
-    cout << "Deseja preencher a matriz com valores aleatorios ou fixos? (A/F): " << flush;
-    char opcao;
-    cin >> opcao;
+            auto matriz = gerar(dim, tipo);
 
-    if (opcao == 'F' || opcao == 'f') {
-        cout << "Informe o valor que todas as celulas devem ter: " << flush;
-        int valor;
-        cin >> valor;
+            string tipoStr = (tipo == 2) ? "Aleatorio" : "Fixo";
+            string intervaloStr = (tipo == 0) ? "1" :
+                                  (tipo == 1) ? "100000" : "1-100000";
 
-        for (int i = 0; i < dimensao; i++) {
-            for (int j = 0; j < dimensao; j++) {
-                matriz[i][j] = valor;
+            // warm-up (simbólico por que o C++ não tem nem JIT)
+            for (int i = 0; i < 2; i++) {
+                medirLinhas(matriz);
+                medirColunas(matriz);
+            }
+
+            for (int r = 0; r < repeticoes; r++) {
+                bool linhasPrimeiro = (r % 2 == 0);
+
+                auto salvar = [&](Resultado res) {
+                    double tempo = res.tempo / 1e9;
+                    file << dim << "," << res.metodo << "," << tipoStr << ","
+                         << intervaloStr << "," << r << "," << tempo << ","
+                         << res.soma << "\n";
+                };
+
+                if (linhasPrimeiro) {
+                    salvar(medirLinhas(matriz));
+                    salvar(medirColunas(matriz));
+                } else {
+                    salvar(medirColunas(matriz));
+                    salvar(medirLinhas(matriz));
+                }
             }
         }
-    } else {
-        int min, max;
-        cout << "Informe o valor minimo de uma celula: ";
-        cin >> min;
-        cout << "Informe o valor maximo de uma celula: ";
-        cin >> max;
-
-        for (int i = 0; i < dimensao; i++) {
-            for (int j = 0; j < dimensao; j++) {
-                matriz[i][j] = rand() % (max - min + 1) + min;
-
-                int progress = (i * dimensao + j + 1) * 100 / (dimensao * dimensao);
-                cout << "Gerando matriz: " << progress << "%\n";
-            }
-        }
     }
 
-    // Método por linhas
-    auto inicio = chrono::high_resolution_clock::now();
-
-    long long soma = 0;
-    for (int i = 0; i < dimensao; i++) {
-        for (int j = 0; j < dimensao; j++) {
-            soma += matriz[i][j];
-        }
-    }
-
-    auto fim = chrono::high_resolution_clock::now();
-    chrono::duration<double> tempo = fim - inicio;
-
-    cout << "\n--------------------Metodo-por-Linhas--------------------\n";
-    cout << "Tempo: " << tempo.count() << " segundos\n";
-    cout << "Soma: " << soma << endl;
-
-    // Método por colunas
-    inicio = chrono::high_resolution_clock::now();
-
-    soma = 0;
-    for (int i = 0; i < dimensao; i++) {
-        for (int j = 0; j < dimensao; j++) {
-            soma += matriz[j][i];
-        }
-    }
-
-    fim = chrono::high_resolution_clock::now();
-    tempo = fim - inicio;
-
-    cout << "--------------------Metodo-por-Colunas--------------------\n";
-    cout << "Tempo: " << tempo.count() << " segundos\n";
-    cout << "Soma: " << soma << endl;
-
-    return 0;
+    file.close();
+    cout << "Testes finalizados.\n";
 }

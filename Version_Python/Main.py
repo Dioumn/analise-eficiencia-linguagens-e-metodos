@@ -1,53 +1,40 @@
-import random
-import time
+from GeradorMatriz import gerar
+from Medidor import medir_linhas, medir_colunas
 
+dimensoes = [4000, 8000, 12000]
+repeticoes = 5
 
-dimensao = int(input("Informe a dimensão da matriz: "))
+with open("resultados/resultados_python.csv", "w") as f:
+    f.write("dimensao,metodo,tipo,intervalo,execucao,tempo_segundos,soma\n")
 
-matriz = [[0] * dimensao for _ in range(dimensao)]
+    # Loop pelos tipos de matrizes e dimensões
+    for dim in dimensoes:
+        for tipo in range(3):
 
-opcao = input("Deseja preencher a matriz com valores aleatórios ou fixos? (A/F) ")[0]
+            matriz = gerar(dim, tipo)
 
-# Preenche a matriz com valores fixos ou aleatórios, dependendo da escolha do usuário
-if opcao in ('F', 'f'):
-    valor = int(input("Informe os valor que todas as célula devem ter: "))
-    for i in range(dimensao):
-        for j in range(dimensao):
-            matriz[i][j] = valor
-else:
-    min_val = int(input("Informe o valor mínimo de uma célula: "))
-    max_val = int(input("Informe o value máximo de uma célula: "))
+            tipoStr = "Aleatorio" if tipo == 2 else "Fixo"
+            intervaloStr = "1" if tipo == 0 else ("100000" if tipo == 1 else "1-100000")
 
-    # Gera a matriz com valores aleatórios e exibe o progresso
-    total = dimensao * dimensao
-    for i in range(dimensao):
-        for j in range(dimensao):
-            matriz[i][j] = random.randint(min_val, max_val)
-            progress = (i * dimensao + j + 1) * 100 // total
-            print(f"\rGerando matriz: {progress}%", end="")
-    print()
+            # warm-up só de leve
+            for _ in range(2):
+                medir_linhas(matriz)
+                medir_colunas(matriz)
 
-# Calcula a soma dos elementos da matriz e mede o tempo gasto para isso (jeito inteligente)
-inicio = time.perf_counter_ns()
-soma = 0
-for i in range(dimensao):
-    for j in range(dimensao):
-        soma += matriz[i][j]
-fim = time.perf_counter_ns()
+            # Loop pelas repetições, alternando a ordem dos métodos para evitar vieses
+            for r in range(repeticoes):
+                linhasPrimeiro = (r % 2 == 0)
 
-print("--------------------Método-por-Linhas--------------------")
-print(f"\nTempo gasto para calcular a soma: {(fim - inicio) / 1_000_000_000:.6f} segundos")
-print(f"Soma: {soma}")
+                def salvar(res):
+                    metodo, soma, tempo = res
+                    tempo = tempo / 1e9
+                    f.write(f"{dim},{metodo},{tipoStr},{intervaloStr},{r},{tempo},{soma}\n")
 
-# Calcula a soma dos elementos da matriz e mede o tempo gasto para isso (jeito burro)
-inicio = time.perf_counter_ns()
-soma = 0
-for i in range(dimensao):
-    for j in range(dimensao):
-        soma += matriz[j][i]
-fim = time.perf_counter_ns()
+                if linhasPrimeiro:
+                    salvar(medir_linhas(matriz))
+                    salvar(medir_colunas(matriz))
+                else:
+                    salvar(medir_colunas(matriz))
+                    salvar(medir_linhas(matriz))
 
-print("--------------------Método-por-Colunas--------------------")
-print(f"\nTempo gasto para calcular a soma: {(fim - inicio) / 1_000_000_000:.6f} segundos")
-print(f"Soma: {soma}")
-print("__________________________________________________________")
+print("Testes finalizados.")
